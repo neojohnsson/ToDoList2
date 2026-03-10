@@ -6,24 +6,19 @@ import '../App.css';
 function SignIn() {
     const [ email, setEmail ] = useState('');
     const [ password, setPassword] = useState('');
-    const [ error, setError] = useState('');
-    const [ loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
 
     async function handleSignIn(e: React.FormEvent) {
         e.preventDefault();
-        setLoading(true);
-        setError('');
 
         const { error } = await supabase.auth.signInWithPassword({ email, password});
 
         if ( error ) {
-            setError(error.message)
+            throw new Error(error.message)
         } else {
             navigate("/List")
         }
-        setLoading(false);
     }
 
     async function handleSignOut() {
