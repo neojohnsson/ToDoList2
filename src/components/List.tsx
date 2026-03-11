@@ -1,58 +1,57 @@
 
-import { useState } from 'react'
+// import { useEffect } from 'react'
 import supabase from '../utils/supabase'
 import { useNavigate } from 'react-router-dom'
+import './css/List.css'
+import useTasks from '../hooks/useTasks'
+import { useState } from 'react'
+
 
 function List() {
 
-    const [ tasks, setTasks ] = useState<{ id: number, task: string}[]>([]);
-    const [ task, setTask ] = useState('');
+    // const { tasks, task, setTask, getTasks, addTask, removeTask, loading, error } = useTasks();
+    const { tasks, isLoading, error, addTask, removeTask } = useTasks();
     const navigate = useNavigate();
-
-    async function getTasks() {
-        const { data, error } = await supabase.from('tasks').select()
-        if ( error ) throw new Error(error.message);
-        setTasks(data);
-    }
-
-    async function addTask() {
-        if (!task.trim()) return;
-        const { error } = await supabase.from('tasks').insert({ text: task })
-        if ( error ) throw new Error(error.message);
-        await getTasks();
-    }
-
-    async function removeTask( id : number ) {
-        const { error } = await supabase.from('tasks').delete().eq('id', id);
-        if ( error ) throw new Error(error.message);
-        await getTasks();
-    }
+    const [ task, setTask ] = useState('');
 
     async function handleSignOut() {
         await supabase.auth.signOut();
         navigate('/');
     }
 
+    function handleAdd(){
+        if (!task.trim()) return;
+        addTask.mutate(task, { onSuccess: () => setTask('')});
+    }
+
     return (
-        <div>
-            <div>
+        <div className="list-container">
+            <div className="list-header">
                 <button onClick={handleSignOut}>Sign Out</button>
             </div>
-            <div>
-                <input 
-                    value={task} 
-                    onKeyDown={(e) => e.key === 'Enter' && addTask()} 
-                    onChange={(e) => setTask(e.target.value)} 
+            <div className="list-input-row">
+                <input
+                    value={task}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+                    onChange={(e) => setTask(e.target.value)}
+                    placeholder="Add a task..."
                     type="text"/>
-                <button>Add Task</button>
+                <button onClick={handleAdd}>Add</button>
             </div>
-            <ul>
-                {tasks.map((task) => (
-                    <li onClick={() => removeTask(task.id)} key={task.id}>
-                        {task.task}
-                    </li>
-                ))}
-            </ul>
+            { error ? (
+                <p>Failed to load tasks</p>
+            ) : isLoading ? (
+                <p>loading...</p>
+            ) : (
+                <ul>
+                    {tasks.map((x) => (
+                        <li className='listItems' onClick={() => removeTask.mutate(x.id)} key={x.id}>
+                            {x.task}
+                        </li>
+                    ))}
+                </ul>
+            )}
+            
         </div>
     );
 }
